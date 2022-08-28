@@ -1,11 +1,14 @@
 # Standard Library
 import enum
+import random
 from collections import defaultdict
+from functools import reduce
 from pathlib import Path
 from typing import Union
 
 # Third Party
 import imageio.v3 as iio
+import numpy as np
 
 img_path = Path(__file__).parent.absolute() / "images" / "plants.png"
 out_path = Path(__file__).parent.absolute() / "output" / "output.png"
@@ -45,7 +48,12 @@ class pixel:
         return hash(tuple(self))
 
     def add(self, p: OptionalPixel, direction: "directions"):
-        self.neighbours[direction.name].append(p)
+        if p is not None:
+            self.neighbours[direction.name].append(p)
+
+    @property
+    def array(self):
+        return [self.r, self.g, self.b]
 
 
 print(img.shape)
@@ -71,13 +79,85 @@ def name(arr):
 def get(x, y) -> OptionalPixel:
     if x < 0 or y < 0:
         return None
-    return pixels[name(img[x, y])]
+    try:
+        return pixels[name(img[x, y])]
+    except IndexError:
+        return None
 
 
 for x in range(width):
     for y in range(height):
         cur = pixels[name(img[x, y])]
         if cur is not None:
-            cur.add(get(x, y - 10), pixel.directions.TOP)
+            cur.add(get(x, y - 1), pixel.directions.TOP)
+            cur.add(get(x - 1, y), pixel.directions.LEFT)
+            cur.add(get(x + 1, y), pixel.directions.RIGHT)
+            cur.add(get(x, y + 1), pixel.directions.BOTTOM)
 
-iio.imwrite(out_path, img, extension=".png")
+s = 30
+
+gen = np.zeros([s, s, 3]).astype(np.uint8)
+
+gen_x, gen_y, _ = gen.shape
+
+p_list = [pixels[p] for p in pixels]
+
+for i in range(gen_x):
+    gen[0, i] = img[0, i]
+
+
+def intersection(lst1, lst2):
+    return [value for value in lst1 if value in lst2]
+
+
+def possible(x: int, y: int):
+    maybes = []
+
+    top = get(x, y - 1)
+    if top is not None:
+        maybes.append(top.neighbours[pixel.directions.BOTTOM.name])
+
+    left = get(x - 1, y)
+    if left is not None:
+        maybes.append(left.neighbours[pixel.directions.RIGHT.name])
+
+    right = get(x + 1, y)
+    if right is not None:
+        maybes.append(right.neighbours[pixel.directions.LEFT.name])
+
+    bottom = get(x, y + 1)
+    if bottom is not None:
+        maybes.append(bottom.neighbours[pixel.directions.TOP.name])
+
+    def r(a, b):
+        if a is None:
+            return b
+        if b is None:
+            return []
+        return [value for value in a if value in b]
+
+    maybes = reduce(r, maybes, None)
+    random.shuffle(maybes)
+
+    print(len(set(maybes)))
+    return list(set(maybes))
+
+
+def solve():
+    solved = False
+    for x in range(gen_x):
+        for y in range(gen_y):
+            if name(gen[x][y]) == "0:0:0":
+                maybes = possible(x, y) or []
+                for p in maybes:
+                    gen[x, y] = p.array
+                    if not (solved := solve()):
+                        gen[x, y] = [0, 0, 0]
+                return solved
+
+    return True
+
+
+solve()
+
+iio.imwrite(out_path, gen, extension=".png")
