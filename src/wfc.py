@@ -1,37 +1,95 @@
 # Standard Library
 import enum
 import random
-from collections import defaultdict
-from functools import reduce
 from pathlib import Path
-from typing import Union
+from typing import TypeVar, Union
+from xmlrpc.client import boolean
 
 # Third Party
 import imageio.v3 as iio
 import numpy as np
+from rich import print
+from rich.console import Console
+
+console = Console()
 
 img_path = Path(__file__).parent.absolute() / "images" / "plants.png"
 out_path = Path(__file__).parent.absolute() / "output" / "output.png"
 
 img = iio.imread(img_path)
 
-OptionalPixel = Union["pixel", None]
+OptionalPixel = Union["Pixel", None]
 OptionalPixels = list[OptionalPixel]
 
 
-class pixel:
-    class directions(enum.Enum):
-        TOP = "top"
-        LEFT = "left"
-        RIGHT = "right"
-        BOTTOM = "bottom"
+class directions(enum.Enum):
+    TOP = "top"
+    LEFT = "left"
+    RIGHT = "right"
+    BOTTOM = "bottom"
 
+
+R = TypeVar("R", bound="Rule")
+
+
+class Rule:
+    def __init__(self, top: OptionalPixel, left: OptionalPixel, right: OptionalPixel, bottom: OptionalPixel) -> None:
+        self.top = top
+        self.left = left
+        self.right = right
+        self.bottom = bottom
+
+    def __iter__(self):
+        yield self.top
+        yield self.left
+        yield self.right
+        yield self.bottom
+
+    def __str__(self) -> str:
+        return ", ".join(
+            [
+                f"top: {self.top}",
+                f"left: {self.left}",
+                f"right: {self.right}",
+                f"bottom: {self.bottom}",
+            ]
+        )
+
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, Rule) and all(
+            [
+                self.top == __o.top,
+                self.left == __o.left,
+                self.right == __o.right,
+                self.bottom == __o.bottom,
+            ]
+        )
+
+    def __hash__(self) -> int:
+        return hash(tuple(self))
+
+    def passes(self, x: int, y: int) -> boolean:
+        return all(
+            [
+                self.top == get(x, y - 1),
+                self.left == get(x - 1, y),
+                self.right == get(x + 1, y),
+                self.bottom == get(x, y + 1),
+            ]
+        )
+
+    @classmethod
+    def create(cls: type[R], x: int, y: int) -> R:
+        return cls(get(x, y - 1), get(x - 1, y), get(x + 1, y), get(x, y + 1))
+
+
+class Pixel:
     def __init__(self, r, g, b) -> None:
         self.r = r
         self.g = g
         self.b = b
 
-        self.neighbours: dict[str, OptionalPixels] = defaultdict[str, OptionalPixels](lambda: [])
+        self._rules: set[Rule] = set()
 
     def __iter__(self):
         yield "r", self.r
@@ -39,33 +97,43 @@ class pixel:
         yield "b", self.b
 
     def __str__(self) -> str:
-        return f"{self.r}:{self.g}:{self.b}"
+        return f"{self.r},{self.g},{self.b}"
 
     def __eq__(self, __o: object) -> bool:
-        return isinstance(__o, pixel) and str(self) == str(__o)
+        return isinstance(__o, Pixel) and str(self) == str(__o)
 
     def __hash__(self) -> int:
         return hash(tuple(self))
 
-    def add(self, p: OptionalPixel, direction: "directions"):
-        if p is not None:
-            self.neighbours[direction.name].append(p)
+    def add_rule(self, rule: Rule):
+        self._rules.add(rule)
+
+    @property
+    def rules(self):
+        return list(self._rules)
 
     @property
     def array(self):
         return [self.r, self.g, self.b]
 
+    @property
+    def style(self):
+        return f"rgb({self})"
+
+    def print(self, end=""):
+        console.print("#", style=f"rgb({self})", end=end)
+
 
 print(img.shape)
 
 height, width, _ = img.shape
-pixels = set[pixel]()
+pixels = set[Pixel]()
 
 print(height, width)
 
 for x in range(width):
     for y in range(height):
-        p = pixel(*img[x, y])
+        p = Pixel(*img[x, y])
         pixels.add(p)
 
 pixels = {str(p): p for p in pixels}
@@ -73,7 +141,7 @@ print(pixels)
 
 
 def name(arr):
-    return ":".join([str(c) for c in arr])
+    return ",".join([str(c) for c in arr])
 
 
 def get(x, y) -> OptionalPixel:
@@ -89,13 +157,15 @@ for x in range(width):
     for y in range(height):
         cur = pixels[name(img[x, y])]
         if cur is not None:
-            cur.add(get(x, y - 1), pixel.directions.TOP)
-            cur.add(get(x - 1, y), pixel.directions.LEFT)
-            cur.add(get(x + 1, y), pixel.directions.RIGHT)
-            cur.add(get(x, y + 1), pixel.directions.BOTTOM)
+            rule = Rule.create(x, y)
+            cur.add_rule(rule)
+
+for p in pixels.values():
+    p.print()
+    print(f" - {len(p.rules)} rules")
+print()
 
 s = 30
-
 gen = np.zeros([s, s, 3]).astype(np.uint8)
 
 gen_x, gen_y, _ = gen.shape
@@ -113,41 +183,24 @@ def intersection(lst1, lst2):
 def possible(x: int, y: int):
     maybes = []
 
-    top = get(x, y - 1)
-    if top is not None:
-        maybes.append(top.neighbours[pixel.directions.BOTTOM.name])
+    for pixel in pixels.values():
+        if any([rule.passes(x, y) for rule in pixel.rules]):
+            maybes.append(pixel)
 
-    left = get(x - 1, y)
-    if left is not None:
-        maybes.append(left.neighbours[pixel.directions.RIGHT.name])
-
-    right = get(x + 1, y)
-    if right is not None:
-        maybes.append(right.neighbours[pixel.directions.LEFT.name])
-
-    bottom = get(x, y + 1)
-    if bottom is not None:
-        maybes.append(bottom.neighbours[pixel.directions.TOP.name])
-
-    def r(a, b):
-        if a is None:
-            return b
-        if b is None:
-            return []
-        return [value for value in a if value in b]
-
-    maybes = reduce(r, maybes, None)
+    maybes = list(set(maybes))
     random.shuffle(maybes)
 
-    print(len(set(maybes)))
-    return list(set(maybes))
+    for m in maybes:
+        m.print()
+    print(",", end="")
+    return maybes
 
 
 def solve():
     solved = False
     for x in range(gen_x):
         for y in range(gen_y):
-            if name(gen[x][y]) == "0:0:0":
+            if name(gen[x][y]) == "0,0,0":
                 maybes = possible(x, y) or []
                 for p in maybes:
                     gen[x, y] = p.array
