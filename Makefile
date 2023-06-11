@@ -26,17 +26,11 @@ help: ## Display this help
 	pre-commit autoupdate
 	@touch $@
 
-requirements.%.in:
-	echo "-c requirements.txt" > $@
-
-requirements.in:
-	@touch $@
-
-requirements.%.txt: $(PIP_SYNC_PATH) requirements.%.in requirements.txt
+requirements.%.txt: $(PIP_SYNC_PATH) pyproject.toml
 	@echo "Builing $@"
-	@python -m piptools compile --generate-hashes -q -o $@ $(filter-out $<,$^)
+	@python -m piptools compile --generate-hashes -q --extra $* -o $@ $(filter-out $<,$^)
 
-requirements.txt: $(PIP_SYNC_PATH) requirements.in
+requirements.txt: $(PIP_SYNC_PATH) pyproject.toml
 	@echo "Builing $@"
 	@python -m piptools compile --generate-hashes -q $(filter-out $<,$^)
 

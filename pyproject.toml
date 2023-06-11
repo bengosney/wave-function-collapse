@@ -2,9 +2,11 @@
 name = "wave-function-collapse"
 description = "Wave Function Collapse"
 version = "0.0.1"
-authors = [
-    { name = "Ben Gosney", email = "bengosney@googlemail.com" }
-]
+authors = [{ name = "Ben Gosney", email = "bengosney@googlemail.com" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["black", "mypy", "pip-tools", "pre-commit"]
 
 [build-system]
 requires = ["setuptools", "wheel"]
