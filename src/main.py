@@ -125,6 +125,15 @@ def get_cell(pos: Vec2) -> Cell:
         return Cell()
 
 
+def get_surrounding(pos) -> list[tuple[Cell, Directions]]:
+    return [
+        (get_cell(add_vec(pos, up)), "up"),
+        (get_cell(add_vec(pos, down)), "down"),
+        (get_cell(add_vec(pos, left)), "left"),
+        (get_cell(add_vec(pos, right)), "right"),
+    ]
+
+
 while not all([c.is_collapsed for c in grid.values()]):
     possibilities = sum(map(len, grid)) - (grid_size_x * grid_size_y)
 
@@ -140,9 +149,10 @@ while not all([c.is_collapsed for c in grid.values()]):
             for x in range(grid_size_x):
                 pos = (x, y)
 
-                propagating |= grid[pos].collapse(get_cell(add_vec(pos, up)), "up")
-                propagating |= grid[pos].collapse(get_cell(add_vec(pos, down)), "down")
-                propagating |= grid[pos].collapse(get_cell(add_vec(pos, left)), "left")
-                propagating |= grid[pos].collapse(get_cell(add_vec(pos, right)), "right")
+                if grid[pos].is_collapsed:
+                    continue
+
+                for cell, direction in get_surrounding(pos):
+                    propagating |= grid[pos].collapse(cell, direction)
 
     print_grid()
