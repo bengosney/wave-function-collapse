@@ -94,23 +94,24 @@ class Cell:
 
 
 tile_count = len(makeTiles())
-grid_size = 20
+grid_size_y = 20
+grid_size_x = 40
 grid: dict[Vec2, Cell] = {}
 
-for y in range(grid_size):
-    for x in range(grid_size):
+for y in range(grid_size_y):
+    for x in range(grid_size_x):
         grid[(x, y)] = Cell()
 
 
 def rand_pos():
-    return (random.randint(0, grid_size - 1), random.randint(0, grid_size - 1))
+    return (random.randint(0, grid_size_x - 1), random.randint(0, grid_size_y - 1))
 
 
 def print_grid():
     print()
-    for y in range(grid_size):
+    for y in range(grid_size_y):
         print()
-        for x in range(grid_size):
+        for x in range(grid_size_x):
             print(grid[(x, y)], end="")
 
 
@@ -124,9 +125,8 @@ def get_cell(pos: Vec2) -> Cell:
         return Cell()
 
 
-i = 0
-while not all([c.is_collapsed for c in grid.values()]) and i < (grid_size * 100):
-    possibilities = sum(map(len, grid)) - (grid_size * grid_size)
+while not all([c.is_collapsed for c in grid.values()]):
+    possibilities = sum(map(len, grid)) - (grid_size_x * grid_size_y)
 
     lowest = min(map(len, [c for c in grid.values() if not c.is_collapsed]))
     possible_next = [p for p, c in grid.items() if len(c) == lowest]
@@ -136,8 +136,8 @@ while not all([c.is_collapsed for c in grid.values()]) and i < (grid_size * 100)
     propagating = True
     while propagating:
         propagating = False
-        for y in range(grid_size):
-            for x in range(grid_size):
+        for y in range(grid_size_y):
+            for x in range(grid_size_x):
                 pos = (x, y)
 
                 propagating |= grid[pos].collapse(get_cell(add_vec(pos, up)), "up")
