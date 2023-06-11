@@ -1,0 +1,18 @@
+[project]
+name = "wave-function-collapse"
+description = "Wave Function Collapse"
+version = "0.0.1"
+authors = [
+    { name = "Ben Gosney", email = "bengosney@googlemail.com" }
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 128
+target-version = ['py311']
+
+[tool.pycln]
+all = true
