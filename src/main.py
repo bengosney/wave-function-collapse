@@ -61,6 +61,9 @@ def makeTiles():
 class Cell:
     tiles: list[Tile] = field(default_factory=makeTiles)
 
+    def __post_init__(self):
+        self._inital_len = len(self.tiles)
+
     def __len__(self) -> int:
         return len(self.tiles)
 
@@ -76,6 +79,10 @@ class Cell:
     @property
     def is_collapsed(self) -> bool:
         return len(self.tiles) == 1
+
+    @property
+    def is_dirty(self) -> bool:
+        return len(self.tiles) != self._inital_len
 
     def get_sockets(self, direction: Directions) -> list[str]:
         return list(map(lambda t: getattr(t, direction), self.tiles))
@@ -154,6 +161,7 @@ while not all([c.is_collapsed for c in grid.values()]):
                     continue
 
                 for cell, direction in get_surrounding(pos):
-                    propagating |= grid[pos].collapse(cell, direction)
+                    if cell.is_dirty:
+                        propagating |= grid[pos].collapse(cell, direction)
 
     print_grid()
