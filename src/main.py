@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import Literal, Self
 
 # Third Party
-from icecream import ic
 from PIL import Image
 
 # First Party
@@ -80,8 +79,8 @@ class Cell:
         return old_len != len(self.tiles)
 
     def pick(self):
-        ic([t.weight for t in self.tiles])
-        ic(self.tiles)
+        # ic([t.weight for t in self.tiles])
+        # ic(self.tiles)
         self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
 
 
