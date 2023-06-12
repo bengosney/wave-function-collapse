@@ -3,8 +3,7 @@
 .PRECIOUS: requirements.%.in
 
 HOOKS=$(.git/hooks/pre-commit)
-INS=$(wildcard requirements.*.in)
-REQS=$(subst in,txt,$(INS))
+REQS=$(wildcard requirements.*.txt)
 
 PYTHON_VERSION:=$(shell python --version | cut -d " " -f 2)
 PIP_PATH:=.direnv/python-$(PYTHON_VERSION)/bin/pip
