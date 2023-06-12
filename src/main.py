@@ -73,6 +73,7 @@ class Cell:
             return False
 
         other_sockets = list(map(lambda s: s[::-1], cell.get_sockets(opposites[direction])))
+        other_sockets = list(map(lambda s: s, cell.get_sockets(opposites[direction])))
 
         old_len = len(self.tiles)
         self.tiles = [t for t in self.tiles if getattr(t, direction) in other_sockets]
@@ -83,6 +84,8 @@ class Cell:
         ic(self.tiles)
         self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
 
+
+random.seed(1)
 
 tile_count = len(makeTiles())
 grid_size_y = 20

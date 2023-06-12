@@ -12,10 +12,10 @@ block_size = 12
 @dataclass(frozen=True)
 class Tile:
     val: object
-    up: list[str]
-    down: list[str]
-    left: list[str]
-    right: list[str]
+    up: str
+    down: str
+    left: str
+    right: str
     weight: int = 10
     size: int = block_size
 
@@ -44,10 +44,10 @@ for y, x in grid:
     part = img.crop(box)
     tile = Tile(
         val=part,
-        up=list(map(rgb_to_str, [part.getpixel((x, 0)) for x in range(block_size)])),
-        down=list(map(rgb_to_str, [part.getpixel((x, block_size - 1)) for x in range(block_size)])),
-        left=list(map(rgb_to_str, [part.getpixel((0, y)) for y in range(block_size)])),
-        right=list(map(rgb_to_str, [part.getpixel((block_size - 1, y)) for y in range(block_size)])),
+        up="|".join(map(rgb_to_str, [part.getpixel((x, 0)) for x in range(block_size)])),
+        down="|".join(map(rgb_to_str, [part.getpixel((x, block_size - 1)) for x in range(block_size)])),
+        left="|".join(map(rgb_to_str, [part.getpixel((0, y)) for y in range(block_size)])),
+        right="|".join(map(rgb_to_str, [part.getpixel((block_size - 1, y)) for y in range(block_size)])),
     )
 
     tiles.append(tile)
