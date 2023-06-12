@@ -3,6 +3,13 @@ import random
 from dataclasses import dataclass, field
 from typing import Literal, Self
 
+# Third Party
+from icecream import ic
+from PIL import Image
+
+# First Party
+from img import Tile, block_size, tiles
+
 Directions = Literal["up", "down", "left", "right"]
 Vec2 = tuple[int, int]
 
@@ -27,34 +34,8 @@ opposites: dict[Directions, Directions] = {
 }
 
 
-@dataclass(frozen=True)
-class Tile:
-    val: str
-    up: str
-    down: str
-    left: str
-    right: str
-    weight: int = 10
-
-    def __str__(self) -> str:
-        return self.val
-
-
 def makeTiles():
-    return [
-        Tile("═", up="aaa", right="aba", down="aaa", left="aba"),
-        Tile("║", up="aba", right="aaa", down="aba", left="aaa"),
-        Tile("╔", up="aaa", right="aba", down="aba", left="aaa"),
-        Tile("╚", up="aba", right="aba", down="aaa", left="aaa"),
-        Tile("╗", up="aaa", right="aaa", down="aba", left="aba"),
-        Tile("╝", up="aba", right="aaa", down="aaa", left="aba"),
-        Tile("╬", up="aba", right="aba", down="aba", left="aba"),
-        Tile("╠", up="aba", right="aba", down="aba", left="aaa"),
-        Tile("╣", up="aba", right="aaa", down="aba", left="aba"),
-        Tile("╦", up="aaa", right="aba", down="aba", left="aba"),
-        Tile("╩", up="aba", right="aba", down="aaa", left="aba"),
-        Tile(" ", up="aaa", right="aaa", down="aaa", left="aaa", weight=100),
-    ]
+    return tiles.copy()
 
 
 @dataclass
@@ -69,11 +50,11 @@ class Cell:
 
     def __str__(self) -> str:
         if self.is_collapsed:
-            return self.tiles[0].val
+            return "*"
         else:
             count = len(self.tiles)
             if count >= 10:
-                return "*"
+                return "+"
             return f"{count}"
 
     @property
@@ -98,12 +79,14 @@ class Cell:
         return old_len != len(self.tiles)
 
     def pick(self):
+        ic([t.weight for t in self.tiles])
+        ic(self.tiles)
         self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
 
 
 tile_count = len(makeTiles())
 grid_size_y = 20
-grid_size_x = 40
+grid_size_x = 20
 grid: dict[Vec2, Cell] = {}
 
 for y in range(grid_size_y):
@@ -165,3 +148,11 @@ while not all([c.is_collapsed for c in grid.values()]):
                         propagating |= grid[pos].collapse(cell, direction)
 
     print_grid()
+
+
+output = Image.new("RGB", (grid_size_x * block_size, grid_size_y * block_size))
+for y in range(grid_size_y):
+    for x in range(grid_size_x):
+        pass
+
+output.save("output.png")
