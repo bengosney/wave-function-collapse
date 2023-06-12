@@ -34,6 +34,7 @@ class Tile:
     down: str
     left: str
     right: str
+    weight: int = 10
 
     def __str__(self) -> str:
         return self.val
@@ -52,7 +53,7 @@ def makeTiles():
         Tile("╣", up="aba", right="aaa", down="aba", left="aba"),
         Tile("╦", up="aaa", right="aba", down="aba", left="aba"),
         Tile("╩", up="aba", right="aba", down="aaa", left="aba"),
-        Tile(" ", up="aaa", right="aaa", down="aaa", left="aaa"),
+        Tile(" ", up="aaa", right="aaa", down="aaa", left="aaa", weight=100),
     ]
 
 
@@ -90,7 +91,7 @@ class Cell:
         return old_len != len(self.tiles)
 
     def pick(self):
-        self.tiles = [random.choice(self.tiles)]
+        self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
 
 
 tile_count = len(makeTiles())
