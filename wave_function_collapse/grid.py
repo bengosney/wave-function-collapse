@@ -3,7 +3,8 @@ import random
 from dataclasses import dataclass
 
 # Third Party
-from rich import print
+from rich.layout import Layout
+from rich.live import Live
 
 # Locals
 from .cell import Cell
@@ -24,7 +25,6 @@ class Grid:
 
     def __post_init__(self):
         self.Cell = Cell.make_default(self.tiles)
-
         self.cells: dict[Vec2, Cell] = {}
         for x in range(self.width):
             for y in range(self.height):
@@ -42,7 +42,7 @@ class Grid:
             for x in range(self.width):
                 output += str(self[Vec2(x, y)])
             output += "\n"
-        return output
+        return output.strip("\n")
 
     def _get_surrounding(self, pos: Vec2) -> list[tuple[Cell, Directions]]:
         return [
@@ -53,24 +53,27 @@ class Grid:
         ]
 
     def collapse(self, _print=False):
-        while not all([c.is_collapsed for c in self.cells.values()]):
-            lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
-            possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
-            pos = random.choice(possible_next)
-            self[pos].pick()
+        layout = Layout(str(self), size=self.height)
+        with Live(layout, auto_refresh=False, transient=True) as live:
+            while not all([c.is_collapsed for c in self.cells.values()]):
+                lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
+                possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
+                pos = random.choice(possible_next)
+                self[pos].pick()
 
-            propagating = True
-            while propagating:
-                propagating = False
-                for y in range(self.height):
-                    for x in range(self.width):
-                        pos = Vec2(x, y)
+                propagating = True
+                while propagating:
+                    propagating = False
+                    for y in range(self.height):
+                        for x in range(self.width):
+                            pos = Vec2(x, y)
 
-                        if self[pos].is_collapsed:
-                            continue
+                            if self[pos].is_collapsed:
+                                continue
 
-                        for cell, direction in self._get_surrounding(pos):
-                            if cell.is_dirty:
-                                propagating |= self[pos].collapse(cell, direction)
-            if _print:
-                print(str(self))
+                            for cell, direction in self._get_surrounding(pos):
+                                if cell.is_dirty:
+                                    propagating |= self[pos].collapse(cell, direction)
+                if _print:
+                    layout.update(str(self))
+                    live.refresh()

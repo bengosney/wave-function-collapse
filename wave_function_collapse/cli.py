@@ -2,9 +2,9 @@
 import typer
 from rich import print
 
-# Locals
-from .grid import Grid
-from .main import tileset
+# First Party
+from wave_function_collapse.grid import Grid
+from wave_function_collapse.main import tileset
 
 app = typer.Typer()
 
@@ -13,5 +13,8 @@ app = typer.Typer()
 def draw_grid(width: int = 40, height: int = 20, draw: bool = True):
     grid = Grid(width=width, height=height, tiles=tileset)
     grid.collapse(_print=draw)
-    if not draw:
-        print(str(grid))
+    print(str(grid))
+
+
+if __name__ == "__main__":
+    draw_grid()
