@@ -1,5 +1,6 @@
 # Standard Library
 import random
+from collections import deque
 from dataclasses import dataclass
 
 # First Party
@@ -41,33 +42,43 @@ class Grid:
             output += "\n"
         return output
 
-    def _get_surrounding(self, pos: Vec2) -> list[tuple[Cell, Directions]]:
+    def _get_surrounding(self, pos: Vec2) -> list[tuple[Cell, Directions, Vec2]]:
         return [
-            (self[pos + up], "up"),
-            (self[pos + down], "down"),
-            (self[pos + left], "left"),
-            (self[pos + right], "right"),
+            (self[pos + up], "up", pos + up),
+            (self[pos + down], "down", pos + down),
+            (self[pos + left], "left", pos + left),
+            (self[pos + right], "right", pos + right),
         ]
 
     def collapse(self, _print=False):
+        round = 0
         while not all([c.is_collapsed for c in self.cells.values()]):
+            round += 1
+            if round == 10:
+                print(round)
             lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
             possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
-            pos = random.choice(possible_next)
-            self[pos].pick()
+            start_pos = random.choice(possible_next)
+            self[start_pos].pick()
 
             propagating = True
             while propagating:
+                checked = set()
+                to_check = deque([start_pos])
                 propagating = False
-                for y in range(self.height):
-                    for x in range(self.width):
-                        pos = Vec2(x, y)
 
-                        if self[pos].is_collapsed:
-                            continue
+                while len(to_check):
+                    pos = to_check.pop()
 
-                        for cell, direction in self._get_surrounding(pos):
-                            if cell.is_dirty:
-                                propagating |= self[pos].collapse(cell, direction)
+                    for cell, direction, p in self._get_surrounding(pos):
+                        if self[pos].collapse(cell, direction):
+                            propagating = True
+
+                        if p not in checked and self[pos].is_dirty and p in self.cells.keys() and not self[p].is_collapsed:
+                            to_check.append(p)
+                            checked.add(p)
+
+                    checked.add(pos)
+
             if _print:
                 print(self)
