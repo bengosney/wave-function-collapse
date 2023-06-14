@@ -29,10 +29,7 @@ class Grid:
                 self.cells[Vec2(x, y)] = self.Cell()
 
     def __getitem__(self, key: Vec2) -> Cell:
-        try:
-            return self.cells[key]
-        except KeyError:
-            return self.Cell()
+        return self.cells[key]
 
     def __str__(self) -> str:
         output = ""
@@ -42,20 +39,16 @@ class Grid:
             output += "\n"
         return output
 
-    def _get_surrounding(self, pos: Vec2) -> list[tuple[Cell, Directions, Vec2]]:
+    def _get_surrounding(self, pos: Vec2) -> list[tuple[Vec2, Directions]]:
         return [
-            (self[pos + up], "up", pos + up),
-            (self[pos + down], "down", pos + down),
-            (self[pos + left], "left", pos + left),
-            (self[pos + right], "right", pos + right),
+            (pos + up, "up"),
+            (pos + down, "down"),
+            (pos + left, "left"),
+            (pos + right, "right"),
         ]
 
     def collapse(self, _print=False):
-        round = 0
         while not all([c.is_collapsed for c in self.cells.values()]):
-            round += 1
-            if round == 10:
-                print(round)
             lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
             possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
             start_pos = random.choice(possible_next)
@@ -63,22 +56,22 @@ class Grid:
 
             propagating = True
             while propagating:
-                checked = set()
+                seen = {start_pos}
                 to_check = deque([start_pos])
                 propagating = False
 
                 while len(to_check):
                     pos = to_check.pop()
 
-                    for cell, direction, p in self._get_surrounding(pos):
-                        if self[pos].collapse(cell, direction):
-                            propagating = True
+                    for p, direction in self._get_surrounding(pos):
+                        try:
+                            propagating |= self[pos].collapse(self[p], direction)
+                        except KeyError:
+                            continue
 
-                        if p not in checked and self[pos].is_dirty and p in self.cells.keys() and not self[p].is_collapsed:
+                        if p not in seen and self[pos].is_dirty and not self[p].is_collapsed:
                             to_check.append(p)
-                            checked.add(p)
-
-                    checked.add(pos)
+                            seen.add(p)
 
             if _print:
                 print(self)
