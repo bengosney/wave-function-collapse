@@ -2,10 +2,13 @@
 import random
 from dataclasses import dataclass
 
-# First Party
-from cell import Cell
-from tile import Directions, Tile
-from vec2 import Vec2
+# Third Party
+from rich import print
+
+# Locals
+from .cell import Cell
+from .tile import Directions, Tile
+from .vec2 import Vec2
 
 up: Vec2 = Vec2(0, -1)
 down: Vec2 = Vec2(0, 1)
@@ -70,4 +73,4 @@ class Grid:
                             if cell.is_dirty:
                                 propagating |= self[pos].collapse(cell, direction)
             if _print:
-                print(self)
+                print(str(self))

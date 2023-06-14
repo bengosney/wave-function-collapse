@@ -1,6 +1,6 @@
-# First Party
-from grid import Grid
-from tile import Tile
+# Locals
+from .grid import Grid
+from .tile import Tile
 
 tileset = [
     Tile("═", up="aaa", right="aba", down="aaa", left="aba"),
@@ -17,8 +17,10 @@ tileset = [
     Tile(" ", up="aaa", right="aaa", down="aaa", left="aaa", weight=100),
 ]
 
-grid = Grid(width=40, height=20, tiles=tileset)
-grid.collapse(_print=True)
 
-print("=" * 40)
-print(grid)
+if __name__ == "__main__":
+    grid = Grid(width=40, height=20, tiles=tileset)
+    grid.collapse(_print=True)
+
+    print("=" * 40)
+    print(grid)

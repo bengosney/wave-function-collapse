@@ -72,3 +72,4 @@ clean: ## Remove all build files
 install: $(PIP_SYNC_PATH) requirements.txt $(REQS) ## Install development requirements (default)
 	@echo "Installing $(filter-out $<,$^)"
 	@python -m piptools sync requirements.txt $(REQS)
+	@python -m pip install -e .

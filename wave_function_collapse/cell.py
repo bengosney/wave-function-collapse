@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Self
 
-# First Party
-from tile import Directions, Tile
+# Locals
+from .tile import Directions, Tile
 
 opposites: dict[Directions, Directions] = {
     "up": "down",
