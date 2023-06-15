@@ -1,11 +1,8 @@
 # Standard Library
-import random
 
 # First Party
 from grid import Grid
 from tile import Tile
-
-random.seed(1)
 
 tileset = [
     Tile("═", up="aaa", right="aba", down="aaa", left="aba"),

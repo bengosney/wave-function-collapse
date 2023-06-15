@@ -1,10 +1,10 @@
 # Standard Library
 import random
-from collections import deque
 from dataclasses import dataclass
 
 # First Party
 from cell import Cell
+from queue_set import queue
 from tile import Directions, Tile
 from vec2 import Vec2
 
@@ -56,8 +56,7 @@ class Grid:
 
             propagating = True
             while propagating:
-                seen = {start_pos}
-                to_check = deque([start_pos])
+                to_check = queue([start_pos])
                 propagating = False
 
                 while len(to_check):
@@ -69,9 +68,8 @@ class Grid:
                         except KeyError:
                             continue
 
-                        if p not in seen and self[pos].is_dirty and not self[p].is_collapsed:
+                        if self[pos].is_dirty and not self[p].is_collapsed:
                             to_check.append(p)
-                            seen.add(p)
 
             if _print:
                 print(self)
