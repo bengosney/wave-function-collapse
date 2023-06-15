@@ -48,7 +48,7 @@ class Grid:
         ]
 
     def collapse(self, _print=False):
-        while not all([c.is_collapsed for c in self.cells.values()]):
+        while not all(c.is_collapsed for c in self.cells.values()):
             lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
             possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
             start_pos = random.choice(possible_next)
