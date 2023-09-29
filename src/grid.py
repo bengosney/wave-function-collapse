@@ -2,6 +2,10 @@
 import random
 from dataclasses import dataclass
 
+# Third Party
+from rich.live import Live
+from rich.text import Text
+
 # First Party
 from cell import Cell
 from queue_set import queue
@@ -48,28 +52,32 @@ class Grid:
         ]
 
     def collapse(self, _print=False):
-        while not all(c.is_collapsed for c in self.cells.values()):
-            lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
-            possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
-            start_pos = random.choice(possible_next)
-            self[start_pos].pick()
+        text = Text()
+        with Live(text, auto_refresh=False) as live:
+            while not all(c.is_collapsed for c in self.cells.values()):
+                lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
+                possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
+                start_pos = random.choice(possible_next)
+                self[start_pos].pick()
 
-            propagating = True
-            while propagating:
-                to_check = queue([start_pos])
-                propagating = False
+                propagating = True
+                while propagating:
+                    to_check = queue([start_pos])
+                    propagating = False
 
-                while len(to_check):
-                    pos = to_check.pop()
+                    while len(to_check):
+                        pos = to_check.pop()
 
-                    for p, direction in self._get_surrounding(pos):
-                        try:
-                            propagating |= self[pos].collapse(self[p], direction)
-                        except KeyError:
-                            continue
+                        for p, direction in self._get_surrounding(pos):
+                            try:
+                                propagating |= self[pos].collapse(self[p], direction)
+                            except KeyError:
+                                continue
 
-                        if self[pos].is_dirty and not self[p].is_collapsed:
-                            to_check.append(p)
+                            if self[pos].is_dirty and not self[p].is_collapsed:
+                                to_check.append(p)
 
-            if _print:
-                print(self)
+                if _print:
+                    text.truncate(0)
+                    text.append(f"{self}")
+                    live.refresh()

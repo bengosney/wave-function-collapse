@@ -41,6 +41,3 @@ tileset = [
 
 grid = Grid(width=100, height=40, tiles=tileset)
 grid.collapse(_print=True)
-
-print("=" * 40)
-print(grid)
