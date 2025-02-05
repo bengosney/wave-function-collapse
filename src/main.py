@@ -52,5 +52,9 @@ def main(progress: bool = True, width: int = 100, height: int = 40, full_tileset
     grid.collapse(_print=progress)
 
 
+def cli():
+    typer.run(main)
+
+
 if __name__ == "__main__":
     typer.run(main)
