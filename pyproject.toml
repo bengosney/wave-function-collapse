@@ -1,23 +1,41 @@
-[project]
-name = "wave-function-collapse"
-description = "Wave Function Collapse"
-version = "0.0.1"
-authors = [{ name = "Ben Gosney", email = "bengosney@googlemail.com" }]
-dependencies = ["rich", "typer"]
-
-[project.optional-dependencies]
-dev = ["black", "mypy", "pip-tools", "pre-commit"]
-
 [build-system]
-requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
-line-length = 128
-target-version = ['py311']
+requires = [ "setuptools", "wheel" ]
 
-[tool.pycln]
-all = true
+[project]
+name = "wave-function-collapse"
+version = "0.0.1"
+description = "Wave Function Collapse"
+authors = [ { name = "Ben Gosney", email = "bengosney@googlemail.com" } ]
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
 
-[project.scripts]
-wave-function-collapse = "main:cli"
+dependencies = [ "rich", "typer" ]
+optional-dependencies.dev = [ "black", "mypy", "pip-tools", "pre-commit", "ruff" ]
+scripts.wave-function-collapse = "main:cli"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [ "migrations" ]
+
+format.indent-style = "space"
+format.quote-style = "double"
+format.docstring-code-format = true
+
+lint.select = [ "C90", "DJ", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PL", "RUF", "TRY", "UP" ]
+
+lint.isort.section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]

@@ -3,7 +3,7 @@ from collections import deque
 from typing import Any
 
 
-class queue(deque):
+class Queue(deque):
     @property
     def seen(self):
         if not hasattr(self, "_seen"):
