@@ -2,14 +2,20 @@
 .DEFAULT_GOAL := install
 .PRECIOUS: requirements.%.in
 
-HOOKS=$(.git/hooks/pre-commit)
-REQS=$(wildcard requirements.*.txt)
+SYSTEM_PYTHON_VERSION:=$(shell ls /usr/bin/python* | grep -Eo '[0-9]+\.[0-9]+' | sort -V | tail -n 1)
 
-PYTHON_VERSION:=$(shell python --version | cut -d " " -f 2)
-PIP_PATH:=.direnv/python-$(PYTHON_VERSION)/bin/pip
-WHEEL_PATH:=.direnv/python-$(PYTHON_VERSION)/bin/wheel
-PIP_SYNC_PATH:=.direnv/python-$(PYTHON_VERSION)/bin/pip-sync
-PRE_COMMIT_PATH:=.direnv/python-$(PYTHON_VERSION)/bin/pre-commit
+HOOKS=$(.git/hooks/pre-commit)
+REQS=$(shell python3 -c 'import tomllib;[print(f"requirements.{k}.txt") for k in tomllib.load(open("pyproject.toml", "rb"))["project"]["optional-dependencies"].keys()]')
+
+BINPATH=$(shell which python3 | xargs dirname | xargs realpath --relative-to=".")
+
+PIP_PATH=$(BINPATH)/pip
+WHEEL_PATH=$(BINPATH)/wheel
+PRE_COMMIT_PATH=$(BINPATH)/pre-commit
+UV_PATH=$(BINPATH)/uv
+
+bob:
+	echo $(BINPATH)
 
 help: ## Display this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -25,13 +31,13 @@ help: ## Display this help
 	pre-commit autoupdate
 	@touch $@
 
-requirements.%.txt: $(PIP_SYNC_PATH) pyproject.toml
+requirements.%.txt: $(UV_PATH) pyproject.toml
 	@echo "Builing $@"
-	@python -m piptools compile --generate-hashes -q --extra $* -o $@ $(filter-out $<,$^)
+	python -m uv pip compile --generate-hashes --extra $* $(filter-out $<,$^) > $@
 
-requirements.txt: $(PIP_SYNC_PATH) pyproject.toml
+requirements.txt: $(UV_PATH) pyproject.toml
 	@echo "Builing $@"
-	@python -m piptools compile --generate-hashes -q $(filter-out $<,$^)
+	python -m uv pip compile --generate-hashes $(filter-out $<,$^) > $@
 
 .direnv: .envrc
 	@python -m ensurepip
@@ -43,24 +49,23 @@ requirements.txt: $(PIP_SYNC_PATH) pyproject.toml
 
 .envrc:
 	@echo "Setting up .envrc then stopping"
-	@echo "layout python python3.11" > $@
+	@echo "layout python python${SYSTEM_PYTHON_VERSION}" > $@
 	@touch -d '+1 minute' $@
 	@false
 
 $(PIP_PATH):
 	@python -m ensurepip
 	@python -m pip install --upgrade pip
+	@touch $@
 
-$(WHEEL_PATH): $(PIP_PATH)
-	@python -m pip install wheel
+$(UV_PATH): $(PIP_PATH)
+	python -m pip install uv
+	@touch $@
 
-$(PIP_SYNC_PATH): $(PIP_PATH) $(WHEEL_PATH)
-	@python -m pip install pip-tools
-
-$(PRE_COMMIT_PATH): $(PIP_PATH) $(WHEEL_PATH)
+$(PRE_COMMIT_PATH): $(PIP_PATH)
 	@python -m pip install pre-commit
 
-init: .direnv .git/hooks/pre-commit $(PIP_SYNC_PATH) requirements.dev.txt ## Initalise a enviroment
+init: .direnv .git/hooks/pre-commit $(UV_PATH) requirements.dev.txt ## Initalise a enviroment
 	@python -m pip install --upgrade pip
 
 clean: ## Remove all build files
@@ -69,6 +74,6 @@ clean: ## Remove all build files
 	rm -rf .pytest_cache
 	rm -f .testmondata
 
-install: $(PIP_SYNC_PATH) requirements.txt $(REQS) ## Install development requirements (default)
+install: $(UV_PATH) requirements.txt $(REQS) ## Install development requirements (default)
 	@echo "Installing $(filter-out $<,$^)"
-	@python -m piptools sync requirements.txt $(REQS)
+	@python -m uv pip sync $(filter-out $<,$^)
