@@ -8,7 +8,7 @@ from rich.text import Text
 
 # First Party
 from cell import Cell
-from queue_set import queue
+from queue_set import Queue
 from tile import Directions, Tile
 from vec2 import Vec2
 
@@ -62,7 +62,7 @@ class Grid:
 
                 propagating = True
                 while propagating:
-                    to_check = queue([start_pos])
+                    to_check = Queue([start_pos])
                     propagating = False
 
                     while len(to_check):

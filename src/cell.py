@@ -28,8 +28,7 @@ class Cell:
     def __str__(self) -> str:
         if self.is_collapsed:
             return self.tiles[0].val
-        count = len(self.tiles)
-        return "*" if count >= 10 else f"{count}"
+        return "*"
 
     @property
     def is_collapsed(self) -> bool:
