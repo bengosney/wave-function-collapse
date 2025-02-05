@@ -2,17 +2,20 @@
 .DEFAULT_GOAL := install
 .PRECIOUS: requirements.%.in
 
-HOOKS=$(.git/hooks/pre-commit)
-REQS=$(shell python -c 'import tomllib;[print(f"requirements.{k}.txt") for k in tomllib.load(open("pyproject.toml", "rb"))["project"]["optional-dependencies"].keys()]')
-
-BINPATH=$(shell which python | xargs dirname | xargs realpath --relative-to=".")
-
 SYSTEM_PYTHON_VERSION:=$(shell ls /usr/bin/python* | grep -Eo '[0-9]+\.[0-9]+' | sort -V | tail -n 1)
-PYTHON_VERSION:=$(shell python --version | cut -d " " -f 2)
-PIP_PATH:=$(BINPATH)/pip
-WHEEL_PATH:=$(BINPATH)/wheel
-PRE_COMMIT_PATH:=$(BINPATH)/pre-commit
-UV_PATH:=$(BINPATH)/uv
+
+HOOKS=$(.git/hooks/pre-commit)
+REQS=$(shell python3 -c 'import tomllib;[print(f"requirements.{k}.txt") for k in tomllib.load(open("pyproject.toml", "rb"))["project"]["optional-dependencies"].keys()]')
+
+BINPATH=$(shell which python3 | xargs dirname | xargs realpath --relative-to=".")
+
+PIP_PATH=$(BINPATH)/pip
+WHEEL_PATH=$(BINPATH)/wheel
+PRE_COMMIT_PATH=$(BINPATH)/pre-commit
+UV_PATH=$(BINPATH)/uv
+
+bob:
+	echo $(BINPATH)
 
 help: ## Display this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -46,7 +49,7 @@ requirements.txt: $(UV_PATH) pyproject.toml
 
 .envrc:
 	@echo "Setting up .envrc then stopping"
-	@echo "layout python python3.11" > $@
+	@echo "layout python python${SYSTEM_PYTHON_VERSION}" > $@
 	@touch -d '+1 minute' $@
 	@false
 
@@ -55,15 +58,11 @@ $(PIP_PATH):
 	@python -m pip install --upgrade pip
 	@touch $@
 
-$(WHEEL_PATH): $(PIP_PATH)
-	@python -m pip install wheel
-	@touch $@
-
-$(UV_PATH): $(PIP_PATH) $(WHEEL_PATH)
+$(UV_PATH): $(PIP_PATH)
 	python -m pip install uv
 	@touch $@
 
-$(PRE_COMMIT_PATH): $(PIP_PATH) $(WHEEL_PATH)
+$(PRE_COMMIT_PATH): $(PIP_PATH)
 	@python -m pip install pre-commit
 
 init: .direnv .git/hooks/pre-commit $(UV_PATH) requirements.dev.txt ## Initalise a enviroment
