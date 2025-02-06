@@ -1,10 +1,8 @@
-# Standard Library
 import random
 from dataclasses import dataclass
-from functools import partial
+from functools import lru_cache, partial
 from typing import Self
 
-# First Party
 from tile import Directions, Tile
 
 opposites: dict[Directions, Directions] = {
@@ -30,6 +28,9 @@ class Cell:
             return self.tiles[0].val
         return "*"
 
+    def __hash__(self) -> int:
+        return hash(tuple(self.tiles))
+
     @property
     def is_collapsed(self) -> bool:
         return len(self.tiles) == 1
@@ -38,14 +39,19 @@ class Cell:
     def is_dirty(self) -> bool:
         return len(self.tiles) != self._inital_len
 
+    @lru_cache
     def get_sockets(self, direction: Directions) -> list[str]:
         return list(map(lambda t: getattr(t, direction), self.tiles))
+
+    @lru_cache
+    def other_sockets(self, direction: Directions) -> list[str]:
+        return list(map(lambda s: s[::-1], self.get_sockets(opposites[direction])))
 
     def collapse(self, cell: Self, direction: Directions) -> bool:
         if self.is_collapsed:
             return False
 
-        other_sockets = list(map(lambda s: s[::-1], cell.get_sockets(opposites[direction])))
+        other_sockets = cell.get_sockets(opposites[direction])
 
         old_len = len(self.tiles)
         self.tiles = [t for t in self.tiles if getattr(t, direction) in other_sockets]
