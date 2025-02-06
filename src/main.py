@@ -1,9 +1,24 @@
-# Third Party
+from cProfile import Profile
+from enum import Enum
+from pstats import Stats
+
 import typer
 
-# First Party
 from grid import Grid
 from tile import Tile
+
+
+class SortType(str, Enum):
+    CALLS = "calls"
+    CUMULATIVE = "cumulative"
+    FILENAME = "filename"
+    LINE = "line"
+    NAME = "name"
+    NFL = "nfl"
+    PCALLS = "pcalls"
+    STDNAME = "stdname"
+    TIME = "time"
+
 
 tilesets = [
     [
@@ -45,11 +60,24 @@ tilesets = [
 ]
 
 
-def main(progress: bool = True, width: int = 100, height: int = 40, full_tileset: bool = True):
+def main(  # noqa: PLR0913
+    progress: bool = True,
+    width: int = 100,
+    height: int = 40,
+    full_tileset: bool = True,
+    profile: bool = False,
+    profile_sort: SortType = SortType.TIME,
+):
     tileset = tilesets[0] + tilesets[1] if full_tileset else tilesets[0]
 
     grid = Grid(width=width, height=height, tiles=tileset)
-    grid.collapse(_print=progress)
+
+    if profile:
+        with Profile() as profile_output:
+            grid.collapse(_print=progress)
+            Stats(profile_output).strip_dirs().sort_stats(profile_sort).print_stats()
+    else:
+        grid.collapse(_print=progress)
 
 
 def cli():
