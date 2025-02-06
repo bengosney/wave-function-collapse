@@ -77,3 +77,6 @@ clean: ## Remove all build files
 install: $(UV_PATH) requirements.txt $(REQS) ## Install development requirements (default)
 	@echo "Installing $(filter-out $<,$^)"
 	@python -m uv pip sync $(filter-out $<,$^)
+
+cli: $(UV_PATH) ## Install the CLI
+	uv pip install --editable .
