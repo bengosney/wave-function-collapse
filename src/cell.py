@@ -18,7 +18,7 @@ class Cell:
     tiles: list[Tile]
 
     def __post_init__(self):
-        self._inital_len = len(self.tiles)
+        self._inital_len = len(self)
 
     def __len__(self) -> int:
         return len(self.tiles)
@@ -33,11 +33,11 @@ class Cell:
 
     @property
     def is_collapsed(self) -> bool:
-        return len(self.tiles) == 1
+        return len(self) == 1
 
     @property
     def is_dirty(self) -> bool:
-        return len(self.tiles) != self._inital_len
+        return len(self) != self._inital_len
 
     @lru_cache
     def get_sockets(self, direction: Directions) -> list[str]:
@@ -53,9 +53,9 @@ class Cell:
 
         other_sockets = cell.get_sockets(opposites[direction])
 
-        old_len = len(self.tiles)
+        old_len = len(self)
         self.tiles = [t for t in self.tiles if getattr(t, direction) in other_sockets]
-        return old_len != len(self.tiles)
+        return old_len != len(self)
 
     def pick(self):
         self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
