@@ -1,5 +1,4 @@
 import random
-from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import Self
 
@@ -13,15 +12,25 @@ opposites: dict[Directions, Directions] = {
 }
 
 
-@dataclass
 class Cell:
-    tiles: list[Tile]
+    _tiles: list[Tile]
 
-    def __post_init__(self):
-        self._inital_len = len(self)
+    def __init__(self, tiles: list[Tile]):
+        self._tiles = tiles
+        self._inital_len = len(self.tiles)
+        self._len = self._inital_len
+
+    @property
+    def tiles(self) -> list[Tile]:
+        return self._tiles
+
+    @tiles.setter
+    def tiles(self, tiles: list[Tile]):
+        self._tiles = tiles
+        self._len = len(tiles)
 
     def __len__(self) -> int:
-        return len(self.tiles)
+        return self._len
 
     def __str__(self) -> str:
         if self.is_collapsed:
