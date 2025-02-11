@@ -1,6 +1,7 @@
 # Standard Library
 import random
 from dataclasses import dataclass
+from functools import cache
 
 # Third Party
 from rich.live import Live
@@ -43,20 +44,35 @@ class Grid:
             output += "\n"
         return output
 
-    def _get_surrounding(self, pos: Vec2) -> list[tuple[Vec2, Directions]]:
-        return [
-            (pos + up, "up"),
-            (pos + down, "down"),
-            (pos + left, "left"),
-            (pos + right, "right"),
-        ]
+    @staticmethod
+    def _get_surrounding(pos: Vec2) -> list[tuple[Vec2, Directions]]:
+        @cache
+        def _surrounding() -> list[tuple[Vec2, Directions]]:
+            return [
+                (pos + up, "up"),
+                (pos + down, "down"),
+                (pos + left, "left"),
+                (pos + right, "right"),
+            ]
 
-    def collapse(self, _print=False):
+        return _surrounding()
+
+    def collapse(self, _print=False):  # noqa: C901
         text = Text()
         with Live(text, auto_refresh=False) as live:
             while not all(c.is_collapsed for c in self.cells.values()):
-                lowest = min(map(len, [c for c in self.cells.values() if not c.is_collapsed]))
-                possible_next = [p for p, c in self.cells.items() if len(c) == lowest]
+                lowest = float("inf")
+                possible_next = []
+
+                for p, c in self.cells.items():
+                    if not c.is_collapsed:
+                        length = len(c)
+                        if length < lowest:
+                            lowest = length
+                            possible_next = [p]
+                        elif length == lowest:
+                            possible_next.append(p)
+
                 start_pos = random.choice(possible_next)
                 self[start_pos].pick()
 
