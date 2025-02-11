@@ -1,5 +1,5 @@
 import random
-from functools import lru_cache, partial
+from functools import partial
 from typing import Self
 
 from tile import Directions, Tile
@@ -14,11 +14,13 @@ opposites: dict[Directions, Directions] = {
 
 class Cell:
     _tiles: list[Tile]
+    _inital_len: int
+    _len: int
+    _is_collapsed: bool
 
     def __init__(self, tiles: list[Tile]):
-        self._tiles = tiles
+        self.tiles = tiles
         self._inital_len = len(self.tiles)
-        self._len = self._inital_len
 
     @property
     def tiles(self) -> list[Tile]:
@@ -28,6 +30,7 @@ class Cell:
     def tiles(self, tiles: list[Tile]):
         self._tiles = tiles
         self._len = len(tiles)
+        self._is_collapsed = self._len == 1
 
     def __len__(self) -> int:
         return self._len
@@ -42,17 +45,15 @@ class Cell:
 
     @property
     def is_collapsed(self) -> bool:
-        return len(self) == 1
+        return self._is_collapsed
 
     @property
     def is_dirty(self) -> bool:
-        return len(self) != self._inital_len
+        return self._len != self._inital_len
 
-    @lru_cache
     def get_sockets(self, direction: Directions) -> list[str]:
         return list(map(lambda t: getattr(t, direction), self.tiles))
 
-    @lru_cache
     def other_sockets(self, direction: Directions) -> list[str]:
         return list(map(lambda s: s[::-1], self.get_sockets(opposites[direction])))
 
@@ -62,9 +63,9 @@ class Cell:
 
         other_sockets = cell.get_sockets(opposites[direction])
 
-        old_len = len(self)
+        old_len = self._len
         self.tiles = [t for t in self.tiles if getattr(t, direction) in other_sockets]
-        return old_len != len(self)
+        return old_len != self._len
 
     def pick(self):
         self.tiles = random.choices(self.tiles, k=1, weights=[t.weight for t in self.tiles])
